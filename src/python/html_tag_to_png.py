@@ -171,4 +171,7 @@ def main(page: str, outdir: str, selector: str, scale: float, transparent: bool)
 
 
 if __name__ == "__main__":
+    print("BEFORE RUNNING BE SURE YOU HAVE PLAYWRIGHT DEPENDENCIES INSTALLED:")
+    print("  uvx --with pytest-playwright playwright install")
+
     main()
