@@ -18,7 +18,10 @@ def archive(source: str, output: str, level: int, threads: int):
     # Setup Advanced Parameters from 3.14 Docs
     # nb_workers > 0 enables multi-threaded compression
     # checksum_flag adds an XXHash64 for data integrity
+    # In Python 3.14, if you use 'options', you must put the level INSIDE it.
+    # You cannot pass both the level= argument and the options= argument.
     options = {
+        zstd.CompressionParameter.compression_level: level,
         zstd.CompressionParameter.nb_workers: threads,
         zstd.CompressionParameter.checksum_flag: 1,
     }
@@ -29,7 +32,8 @@ def archive(source: str, output: str, level: int, threads: int):
     start_time = time.perf_counter()
 
     # Open the zstd stream using the new standard library module
-    with zstd.open(output, mode="wb", level=level, options=options) as zstd_stream:
+    # Pass level=None because we included it in the options dict
+    with zstd.open(output, mode="wb", level=None, options=options) as zstd_stream:
         # Wrap the zstd stream in a Tarfile to handle folders/metadata
         with tarfile.open(fileobj=zstd_stream, mode="w|") as tar:
             tar.add(src_path, arcname=src_path.name)
