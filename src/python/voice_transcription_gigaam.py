@@ -280,9 +280,13 @@ def transcribe_longform_in_memory(
         wav = segment.to(model._device).unsqueeze(0).to(model._dtype)
         length = torch.full([1], wav.shape[-1], device=model._device)
         encoded, encoded_len = model.forward(wav, length)
-        text, words = model._decode(
+        decode_result = model._decode(
             encoded, encoded_len, int(length[0].item()), word_timestamps
         )
+        if isinstance(decode_result, tuple):
+            text, words = decode_result
+        else:
+            text, words = decode_result, []
 
         if word_timestamps and words:
             adjusted_words = [
