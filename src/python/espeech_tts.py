@@ -79,6 +79,37 @@ def pick_device(pref: str | None) -> str:
     return "cpu"
 
 
+def _patch_accentizer_onnx(accentizer) -> None:
+    """Work around a RUAccent/onnxruntime skew: some cached accent ONNX graphs
+    declare `token_type_ids` as a required input, but RUAccent's CharTokenizer
+    only emits `input_ids` + `attention_mask`. Inject all-zero token_type_ids
+    (the standard single-segment default) for any session that needs them.
+    """
+    import numpy as np
+
+    def wrap(session) -> None:
+        try:
+            required = {i.name for i in session.get_inputs()}
+        except Exception:  # noqa: BLE001 — best-effort patch
+            return
+        if "token_type_ids" not in required:
+            return
+        original_run = session.run
+
+        def run(output_names, input_feed, run_options=None):
+            if "token_type_ids" not in input_feed and "input_ids" in input_feed:
+                input_feed = dict(input_feed)
+                input_feed["token_type_ids"] = np.zeros_like(input_feed["input_ids"])
+            return original_run(output_names, input_feed, run_options)
+
+        session.run = run  # shadow the bound method on this instance only
+
+    for holder_name in ("accent_model", "omograph_model", "yo_homograph_model", "stress_usage_predictor"):
+        session = getattr(getattr(accentizer, holder_name, None), "session", None)
+        if session is not None:
+            wrap(session)
+
+
 @lru_cache(maxsize=1)
 def load_accentizer():
     """RUAccent stress/omograph model (cached; downloads on first use)."""
@@ -86,6 +117,7 @@ def load_accentizer():
 
     acc = RUAccent()
     acc.load(omograph_model_size="turbo3.1", use_dictionary=True, tiny_mode=False)
+    _patch_accentizer_onnx(acc)
     return acc
 
 
