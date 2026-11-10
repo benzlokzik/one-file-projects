@@ -6,7 +6,7 @@
 # ]
 #
 # [tool.uv.sources]
-# gigaam = { git = "https://github.com/salute-developers/GigaAM" }
+# gigaam = { git = "https://github.com/salute-developers/GigaAM", rev = "7447938d791c4f3e643386ee22c33777004293a5" }
 # ///
 """
 Transcribe an audio file with GigaAM from the terminal.
@@ -48,7 +48,8 @@ def parse_args() -> argparse.Namespace:
         default="v3_e2e_rnnt",
         help=(
             "GigaAM ASR model to use. "
-            "Examples: ctc, rnnt, e2e_ctc, e2e_rnnt, v2_ctc, v3_rnnt, v3_e2e_rnnt"
+            "Examples: v3_e2e_rnnt (default), v3_e2e_ctc, v3_rnnt, v3_ctc, "
+            "multilingual_ctc, multilingual_large_ctc"
         ),
     )
 
@@ -280,13 +281,7 @@ def transcribe_longform_in_memory(
         wav = segment.to(model._device).unsqueeze(0).to(model._dtype)
         length = torch.full([1], wav.shape[-1], device=model._device)
         encoded, encoded_len = model.forward(wav, length)
-        decode_result = model._decode(
-            encoded, encoded_len, int(length[0].item()), word_timestamps
-        )
-        if isinstance(decode_result, tuple):
-            text, words = decode_result
-        else:
-            text, words = decode_result, []
+        text, words = model._decode(encoded, encoded_len, length, word_timestamps)[0]
 
         if word_timestamps and words:
             adjusted_words = [
