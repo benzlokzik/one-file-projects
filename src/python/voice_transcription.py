@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "faster-whisper",
+#     "av<17",  # faster-whisper 1.2.1 passes metadata_errors; PyAV 19 rejects it, 16 works
 # ]
 # ///
 import argparse
