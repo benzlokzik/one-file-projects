@@ -24,15 +24,15 @@ def parse_args():
     )
     parser.add_argument(
         "--device",
-        default="cuda",
-        choices=["cpu", "cuda"],
-        help="Run on CPU or GPU",
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Run on CPU or GPU (auto = CUDA if available, else CPU)",
     )
     parser.add_argument(
         "--compute_type",
-        default="float16",
-        choices=["float32", "float16", "int8"],
-        help="Precision / quantization mode",
+        default="auto",
+        choices=["auto", "float32", "float16", "int8", "int8_float16"],
+        help="Precision / quantization mode (auto = fastest supported on the device)",
     )
     parser.add_argument(
         "--beam_size",
